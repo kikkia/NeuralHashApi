@@ -1,5 +1,3 @@
-
-
 docker-build:
   # Use the official docker image.
   image: docker:latest
