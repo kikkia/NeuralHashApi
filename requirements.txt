@@ -2,5 +2,9 @@ onnxruntime==1.8.1
 numpy==1.21.2
 requests==2.26.0
 Pillow==8.3.2
-Flask==2.0.1
+FastApi==0.68.1
 ddtrace==0.53.0
+Flask~=2.0.1
+pydantic~=1.8.2
+uvicorn~=0.15.0
+python-multipart==0.0.5

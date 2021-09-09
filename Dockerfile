@@ -1,3 +1,5 @@
-FROM tiangolo/uwsgi-nginx-flask:latest
-COPY ./requirements.txt /var/www/requirements.txt
-RUN pip3 install -r /var/www/requirements.txt
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.7
+LABEL maintainer="Kikkia <j.bezos@amazon.com>"
+COPY . /app
+WORKDIR /app
+RUN pip3 install -r ./requirements.txt
