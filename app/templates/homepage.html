@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<title>W3.CSS Template</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+html,body,h1,h2,h3,h4,h5,h6 {font-family: "Roboto", sans-serif;}
+.w3-sidebar {
+  z-index: 3;
+  width: 250px;
+  top: 43px;
+  bottom: 0;
+  height: inherit;
+}
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<body>
+
+<!-- Navbar -->
+<div class="w3-top">
+  <div class="w3-bar w3-theme w3-top w3-left-align w3-large">
+    <a class="w3-bar-item w3-button w3-right w3-hide-large w3-hover-white w3-large w3-theme-l1" href="javascript:void(0)" onclick="w3_open()"><i class="fa fa-bars"></i></a>
+    <a href="/" class="w3-bar-item w3-button w3-theme-l1">Home</a>
+    <a href="docs" class="w3-bar-item w3-button w3-hide-small w3-hover-white">Docs</a>
+    <a href="https://github.com/kikkia/neuralhashapi" class="w3-bar-item w3-button w3-hide-small w3-hover-white"><i class="fa fa-github" style="font-size:23px"></i></a>
+  </div>
+</div>
+
+
+
+<!-- Overlay effect when opening sidebar on small screens -->
+<div class="w3-overlay w3-hide-large" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
+
+<!-- Main content: shift it to the right by 250 pixels when the sidebar is visible -->
+<div class="w3-main" >
+
+  <div class="w3-row w3-padding-64">
+    <div class="w3-twothird w3-container">
+      <h1 class="w3-text-teal">NeuralHash Api</h1>
+      <p>This is an open-source and open api for running neuralhash over images either uploaded or at a given url. The algorithm is based off of <a href="https://github.com/AsuharietYgvar/AppleNeuralHash2ONNX">this awesome project.</a>
+        Currently, this site is free and open to anyone. Be sure to check out the docs for api references.</p>
+    </div>
+    <div class="w3-twothird w3-container">
+      <h1 class="w3-text-teal">Try it out</h1>
+      <p>You can try it out either with a url or a file upload below.</p>
+      <p>Max file size: 50MB</p>
+      <form id="hash_form">
+            <p><label for="url">Url:</label>
+              <input type="text" name="url" id="url">
+              <input value="Submit" type="submit">
+      </form>
+      <form id="upload_form" enctype="multipart/form-data">
+            <input type="file" id="file" name="Upload File"><br>
+              <input value="Submit" type="submit">
+      </form>
+      <div id="response"></div>
+    </div>
+</div>
+
+
+
+
+
+<script>
+// Get the Sidebar
+var mySidebar = document.getElementById("mySidebar");
+
+// Get the DIV with overlay effect
+var overlayBg = document.getElementById("myOverlay");
+
+// Toggle between showing and hiding the sidebar, and add overlay effect
+function w3_open() {
+  if (mySidebar.style.display === 'block') {
+    mySidebar.style.display = 'none';
+    overlayBg.style.display = "none";
+  } else {
+    mySidebar.style.display = 'block';
+    overlayBg.style.display = "block";
+  }
+}
+
+// Close the sidebar with the close button
+function w3_close() {
+  mySidebar.style.display = "none";
+  overlayBg.style.display = "none";
+}
+</script>
+
+<script type="text/javascript">
+
+    const form = document.querySelector("#hash_form");
+    if (form) {
+      form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const json = serialize_form(this);
+        $.ajax({
+          type: 'POST',
+          url: '/api/link',
+          dataType: 'json',
+          data: json,
+          contentType: 'application/json',
+          success: function(data) {
+            document.getElementById("response").innerText = "Hash: " + data.hash;
+          },
+          error: function(xhr, textStatus, errorThrown) {
+            document.getElementById("response").innerText = "Error: " + JSON.parse(xhr.responseText).detail;
+          },
+        });
+      });
+    }
+    const upform = document.querySelector("#upload_form");
+    if (upform) {
+      upform.addEventListener('submit', function(event) {
+        event.preventDefault();
+        var fd = new FormData();
+        var files = $('#file')[0].files;
+
+        // Check file selected or not
+        if(files.length > 0 ){
+           fd.append('file',files[0]);
+          $.ajax({
+            type: 'POST',
+            url: '/api/upload',
+            data: fd,
+            contentType: false,
+            processData: false,
+            success: function(data) {
+              document.getElementById("response").innerText = "Hash: " + data.hash;
+            },
+            error: function(xhr, textStatus, errorThrown) {
+              document.getElementById("response").innerText = "Error: " + JSON.parse(xhr.responseText).detail;
+            },
+          });
+        }
+      });
+    }
+    const serialize_form = form => JSON.stringify(
+      Array.from(new FormData(form).entries())
+           .reduce((m, [ key, value ]) => Object.assign(m, { [key]: value }), {})
+    );
+
+  </script>
+
+</body>
+</html>

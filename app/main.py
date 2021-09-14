@@ -4,8 +4,16 @@ from PIL import Image
 import requests
 from io import BytesIO
 import os
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter, Request
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from pathlib import Path
+from content_size_limit_asgi import ContentSizeLimitMiddleware
+from content_size_limit_asgi.errors import ContentSizeExceeded
+from fastapi.exception_handlers import http_exception_handler
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+
 import uvicorn
 
 app = FastAPI()
@@ -20,13 +28,22 @@ seed1 = seed1.reshape([96, 128])
 
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 
+BASE_PATH = Path(__file__).resolve().parent
+TEMPLATES = Jinja2Templates(directory=str(BASE_PATH / "templates"))
+general_pages_router = APIRouter()
 
-class hashUrlRequest(BaseModel):
+
+class Hash_Url_Request(BaseModel):
     url: str
 
 
-@app.post('/hash/link/')
-async def link_hash(request: hashUrlRequest):
+@app.get("/", status_code=200)
+async def home(request: Request):
+    return TEMPLATES.TemplateResponse("homepage.html", {"request": request})
+
+
+@app.post('/api/link')
+async def link_hash(request: Hash_Url_Request):
     if not request.url:
         raise HTTPException(status_code=400, detail='No image url specified')
     if not allowed_url(request.url):
@@ -38,7 +55,7 @@ async def link_hash(request: hashUrlRequest):
     return {"hash": get_hash(img.convert('RGB'))}
 
 
-@app.post('/hash/upload/')
+@app.post('/api/upload')
 async def upload_hash(file: UploadFile = File(...)):
     # check if the post request has the file part
     if not file:
@@ -53,6 +70,21 @@ async def upload_hash(file: UploadFile = File(...)):
     else:
         raise HTTPException(status_code=400, detail="Provided file is not a supported format (Supported: " +
                                                     str(ALLOWED_EXTENSIONS) + ")")
+
+
+@app.exception_handler(ContentSizeExceeded)
+async def unicorn_exception_handler(request: Request, exc: ContentSizeExceeded):
+    raise HTTPException(status_code=400, detail="Provided file is too large. Max size 50MB")
+
+
+@app.exception_handler(StarletteHTTPException)
+async def exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        return TEMPLATES.TemplateResponse('404.html', {'request': request})
+    else:
+        # Just use FastAPI's built-in handler for other errors
+        return await http_exception_handler(request, exc)
+
 
 def get_hash(image):
     resized = image.resize([360, 360])
@@ -71,8 +103,10 @@ def get_hash(image):
 
     return hash_hex
 
+
 def allowed_file(filename):
     return os.path.splitext(filename)[1].replace('.', '') in ALLOWED_EXTENSIONS
+
 
 def allowed_url(path):
     for allowedFormat in ALLOWED_EXTENSIONS:
@@ -81,6 +115,8 @@ def allowed_url(path):
 
     return False
 
+
+app.add_middleware(ContentSizeLimitMiddleware, max_content_size=51200000)
 
 if __name__ == '__main__':
     port = os.getenv("SERVER_PORT", 80)
