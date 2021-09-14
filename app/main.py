@@ -6,14 +6,13 @@ from io import BytesIO
 import os
 from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter, Request
 from fastapi.templating import Jinja2Templates
+from ddtrace_asgi.middleware import TraceMiddleware
 from pydantic import BaseModel
 from pathlib import Path
 from content_size_limit_asgi import ContentSizeLimitMiddleware
 from content_size_limit_asgi.errors import ContentSizeExceeded
 from fastapi.exception_handlers import http_exception_handler
 from starlette.exceptions import HTTPException as StarletteHTTPException
-
-
 import uvicorn
 
 app = FastAPI()
@@ -30,6 +29,8 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 
 BASE_PATH = Path(__file__).resolve().parent
 TEMPLATES = Jinja2Templates(directory=str(BASE_PATH / "templates"))
+SERVICE_NAME = "neuralhash-api"
+DD_ENABLED = False
 general_pages_router = APIRouter()
 
 
@@ -115,6 +116,13 @@ def allowed_url(path):
 
     return False
 
+
+# Add middlewares for asgi
+if os.environ.get("DD_ENABLE", DD_ENABLED):
+    app.add_middleware(
+        TraceMiddleware,
+        service=os.environ.get("DATADOG_SERVICE_NAME", SERVICE_NAME),
+    )
 
 app.add_middleware(ContentSizeLimitMiddleware, max_content_size=51200000)
 

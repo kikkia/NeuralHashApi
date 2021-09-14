@@ -4,9 +4,11 @@ requests==2.26.0
 Pillow==8.3.2
 FastApi==0.68.1
 ddtrace==0.53.0
+ddtrace-asgi==0.3.0
 Flask~=2.0.1
 pydantic~=1.8.2
 uvicorn~=0.15.0
 python-multipart==0.0.5
 jinja2==3.0.1
 content-size-limit-asgi==0.1.5
+starlette~=0.14.2
