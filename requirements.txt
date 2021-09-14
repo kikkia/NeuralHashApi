@@ -8,5 +8,5 @@ Flask~=2.0.1
 pydantic~=1.8.2
 uvicorn~=0.15.0
 python-multipart==0.0.5
-jinja2=3.0.2
-content-size-limit-asgi=0.1.5
+jinja2==3.0.1
+content-size-limit-asgi==0.1.5
