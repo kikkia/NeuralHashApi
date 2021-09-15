@@ -1,6 +1,6 @@
 import onnxruntime
 import numpy as np
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 import requests
 from io import BytesIO
 import os
@@ -51,9 +51,13 @@ async def link_hash(request: Hash_Url_Request):
         raise HTTPException(status_code=400, detail="Resource at url is not a supported format (Supported: " +
                                                     str(ALLOWED_EXTENSIONS) + ")")
     response = requests.get(request.url)
-    img = Image.open(BytesIO(response.content))
     # Preprocess image
-    return {"hash": get_hash(img.convert('RGB'))}
+    try:
+        img = Image.open(BytesIO(response.content))
+        hash = get_hash(img.convert('RGB'))
+        return {"hash": hash}
+    except UnidentifiedImageError as e:
+        raise HTTPException(status_code=400, detail="Linked image file is corrupt")
 
 
 @app.post('/api/upload')
@@ -67,7 +71,12 @@ async def upload_hash(file: UploadFile = File(...)):
     if file.filename == '':
         raise HTTPException(status_code=400, detail='No filename')
     if allowed_file(file.filename):
-        return {"hash": get_hash(Image.open(file.file).convert('RGB'))}
+        try:
+            hash = get_hash(Image.open(file.file).convert('RGB'))
+            return {"hash": hash}
+        except UnidentifiedImageError as e:
+            raise HTTPException(status_code=400, detail="Corrupt image file")
+
     else:
         raise HTTPException(status_code=400, detail="Provided file is not a supported format (Supported: " +
                                                     str(ALLOWED_EXTENSIONS) + ")")
