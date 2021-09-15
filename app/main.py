@@ -6,7 +6,7 @@ from io import BytesIO
 import os
 from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter, Request
 from fastapi.templating import Jinja2Templates
-from ddtrace_asgi.middleware import TraceMiddleware
+from ddtrace.contrib.asgi import TraceMiddleware
 from pydantic import BaseModel
 from pathlib import Path
 from content_size_limit_asgi import ContentSizeLimitMiddleware
@@ -119,10 +119,7 @@ def allowed_url(path):
 
 # Add middlewares for asgi
 if os.environ.get("DD_ENABLE", DD_ENABLED):
-    app.add_middleware(
-        TraceMiddleware,
-        service=os.environ.get("DATADOG_SERVICE_NAME", SERVICE_NAME),
-    )
+    app = TraceMiddleware(app)
 
 app.add_middleware(ContentSizeLimitMiddleware, max_content_size=51200000)
 
