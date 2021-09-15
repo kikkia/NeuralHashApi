@@ -125,11 +125,11 @@ def allowed_url(path):
     return False
 
 
+app.add_middleware(ContentSizeLimitMiddleware, max_content_size=51200000)
+
 # Add middlewares for asgi
 if os.environ.get("DD_ENABLE", DD_ENABLED):
     app = TraceMiddleware(app)
-
-app.add_middleware(ContentSizeLimitMiddleware, max_content_size=51200000)
 
 if __name__ == '__main__':
     port = os.getenv("SERVER_PORT", 80)
