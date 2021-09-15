@@ -65,7 +65,6 @@ async def upload_hash(file: UploadFile = File(...)):
     # check if the post request has the file part
     if not file:
         raise HTTPException(status_code=400, detail='No file provided')
-    print(file.filename)
     # if user does not select file, browser also
     # submit a empty part without filename
     if file.filename == '':
