@@ -14,6 +14,7 @@ from content_size_limit_asgi.errors import ContentSizeExceeded
 from fastapi.exception_handlers import http_exception_handler
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import uvicorn
+import hashlib
 
 app = FastAPI()
 
@@ -55,7 +56,8 @@ async def link_hash(request: Hash_Url_Request):
     try:
         img = Image.open(BytesIO(response.content))
         hash = get_hash(img.convert('RGB'))
-        return {"hash": hash}
+        md5 = getMD5(img.convert('RGB'))
+        return {"hash": hash, "md5": md5}
     except UnidentifiedImageError as e:
         raise HTTPException(status_code=400, detail="Linked image file is corrupt")
 
@@ -71,8 +73,10 @@ async def upload_hash(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail='No filename')
     if allowed_file(file.filename):
         try:
-            hash = get_hash(Image.open(file.file).convert('RGB'))
-            return {"hash": hash}
+            img = Image.open(file.file).convert('RGB')
+            hash = get_hash(img)
+            md5 = getMD5(img.convert('RGB'))
+            return {"hash": hash, "md5": md5}
         except UnidentifiedImageError as e:
             raise HTTPException(status_code=400, detail="Corrupt image file")
 
@@ -111,6 +115,9 @@ def get_hash(image):
     hash_hex = '{:0{}x}'.format(int(hash_bits, 2), len(hash_bits) // 4)
 
     return hash_hex
+
+def getMD5(image):
+    return hashlib.md5(image.tobytes()).hexdigest()
 
 
 def allowed_file(filename):
